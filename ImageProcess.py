@@ -21,9 +21,9 @@ def imgToArr(img):
 	imgWidth, imgHeight = img.size
 
 	if imgWidth > MAX_WIDTH_OUTPUT or imgHeight > MAX_HEIGHT_OUTPUT: #check if img needs to be compressed
-		imgArr = []
-		compressedImgArr = []
-		tmp = []
+		imgArr = [] #store the pixel of img
+		compressedImgArr = [] #store the pixel of img after compression
+		tmp = [] # temp array to store pixel temporary
 		pixelCounter = 0
 		#convert img's pixel into a 2D array
 		for pixel in iter(img.getdata()):
@@ -42,7 +42,11 @@ def imgToArr(img):
 		btnRightPixelCol = topLeftPixelCol + compressRatio
 		nextBtnRightPixelCol = btnRightPixelCol
 		averageRGB = 0,0,0
-		while nextBtnRightPixelCol <= imgHeight:
+		while nextBtnRightPixelCol <= imgHeight: #When there's more pixels to cover in the same column
+			#get RGB sum of pixels
+			red = 0
+			green = 0
+			blue = 0
 			averageRGB = ()
 *************************************************************************************************************
 	else: #img does not need to be compressed
@@ -81,8 +85,19 @@ def shrinkImgArr(imgArr):
 		i += 2
 		k += 1
 	return newArr
-def average(list):
-	return sum(list)/list.len
+
+def average(list): #return the average of the numbers in list
+	return sum(list) / len(list)
+
+def sumRGB(list): #return a RGB tuple that contains the sum of all the RGB tuples in list
+	sumPixel = 0,0,0
+	for pixel in list:
+		red, green, blue = pixel
+		sumRed, sumGreen, sumBlue = sumPixel
+		sumPixel = red + sumRed, green + sumGreen, blue + sumBlue
+	return sumPixel
+
+def averageRGB(list) #return a RGB tuple that contains the average of all the RGB tuples in list
 
 #main
 f = open('asciiArt.txt', 'w')
