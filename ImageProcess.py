@@ -12,8 +12,8 @@ from PIL import Image
 
 THRESHOLD_MARGIN = 0.95 #Filters out near-white pixels
 WHITE = 765 #RGB
-MAX_HEIGHT_OUTPUT = 150
-MAX_WIDTH_OUTPUT = 150
+MAX_HEIGHT_OUTPUT = 300
+MAX_WIDTH_OUTPUT = 300
 
 def imgToArr(img): #turn an image into a 2D array. If the image's size is larger than MAX_HEIGHT_OUTPUT or MAX_WIDTH_OUTPUT, the image will be shrinked proportionally
 	nearWhite = WHITE * THRESHOLD_MARGIN
@@ -35,24 +35,24 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 				pixelCounter = 0
 		# print("imgArr demension: ", len(imgArr), "x", len(imgArr[0]))
 		#calculate the ratio the img needs to be compressed at
-		compressRatio = int(round(max(imgWidth/MAX_HEIGHT_OUTPUT, imgHeight/MAX_HEIGHT_OUTPUT)))
-		
+		compressRatio = int(round(max(imgWidth/MAX_WIDTH_OUTPUT, imgHeight/MAX_HEIGHT_OUTPUT)))
+		print("compressRatio: ", compressRatio)
 		#compress imgArr and put in to compressedImgArr for later process
 		topLeftPixelRow = 0 #start from the first row
-		btnRightPixelRow = topLeftPixelRow + compressRatio
+		btnRightPixelRow = topLeftPixelRow + compressRatio - 1
 		nextBtnRightPixelRow = btnRightPixelRow
 		# print("imgWidth: ", imgWidth, "imgHeight: ", imgHeight)
 		while nextBtnRightPixelRow < imgHeight: #Goes through every pixel within the same row until exceeding the height of image
 			topLeftPixelCol = 0 #always start from the first column
-			btnRightPixelCol = topLeftPixelCol + compressRatio
+			btnRightPixelCol = topLeftPixelCol + compressRatio - 1
 			nextBtnRightPixelCol = btnRightPixelCol
 			while nextBtnRightPixelCol < imgWidth: #Goes through every pixel within the same column until exceeding the width of image
 				currentRow = topLeftPixelRow
 				currentCol = topLeftPixelCol
 				#get every pixel within the group of pixels needs to be compress into one pixel
-				while currentRow < btnRightPixelRow: #goes through every pixel in row within this group
+				while currentRow <= btnRightPixelRow: #goes through every pixel in row within this group
 					# print("topLeftPixelRow: ", topLeftPixelRow, "topLeftPixelCol: ", topLeftPixelCol, "btnRightPixelRow: ", btnRightPixelRow, "btnRightPixelCol: ", btnRightPixelCol)
-					while currentCol < btnRightPixelCol: #goes through every pixel in column within this group
+					while currentCol <= btnRightPixelCol: #goes through every pixel in column within this group
 						tmp.append(imgArr[currentRow][currentCol])
 						# print("CurrentRow: ", currentRow, "CurrentCol: ", currentCol)
 						currentCol += 1
@@ -79,16 +79,16 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 					currentCol += 1
 				currentCol = topLeftPixelCol
 				currentRow += 1
-			#compress the last grouped pixels into one pixel
-			compressedImgArr.append(averageRGB(tmp))
-			tmp = [] #clear tmp
+			if (imgWidth/compressRatio) != int(imgWidth/compressRatio):
+				#compress the last grouped pixels into one pixel
+				compressedImgArr.append(averageRGB(tmp))
+				tmp = [] #clear tmp
 			#next row of groups
 			topLeftPixelRow += compressRatio
 			btnRightPixelRow = topLeftPixelRow + compressRatio
 			nextBtnRightPixelRow = btnRightPixelRow
 			#print("LeftOver Compressed!!!!!!!!!!!!")
 			# print("tmpList: ", tmp)
-		#print("imgWidth: ", imgWidth, "imgHeight: ", imgHeight)
 		#print("nextBtnRightPixelRow: ", nextBtnRightPixelRow, "nextBtnRightPixelCol: ", nextBtnRightPixelCol)
 
 		#tranform img to ASCII map
@@ -106,6 +106,7 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 				pixelsArr.append(tmp)
 				tmp = []
 				pixelCounter = 0
+		print("newImgWidth: ", newImgWidth)
 
 	else: #img does not need to be compressed
 		tmp = []
@@ -128,9 +129,11 @@ def printOutputImgArr(imgArr, outputFile): #write the 2D array to outputFile
 	for i in range(len(pixArr)):
 		for j in range(len(pixArr[i])):
 			outputFile.write(pixArr[i][j])
-		f.write("\n")
+		outputFile.write("\n")
+		outputFile.flush()
+	outputFile.write("/")
 
-def shrinkImgArr(imgArr):
+def shrinkImgArr(imgArr): #not used
 	newArr = []
 	k = 0
 	i = 0
@@ -142,7 +145,7 @@ def shrinkImgArr(imgArr):
 			j += 2
 		i += 2
 		k += 1
-	return newArr #not used
+	return newArr
 
 def averageRGB(pixelList): #return a RGB tuple that contains the average of all the RGB tuples in pixelList. pixelList cannot be empty
 	sumPixel = sumRGB(pixelList)
@@ -163,9 +166,10 @@ def sumRGB(pixelList): #return a RGB tuple that contains the sum of all the RGB 
 	return sumPixel
 
 #main
+#work best with square images. As the retangle ratio gets bigger, the output will look more distorted
 f = open('asciiArt.txt', 'w')
-img = Image.open("bigLogo.jpg")
+img = Image.open("crunch.jpg")
 pixArr = imgToArr(img)
-#print("pixArr dimension:", len(pixArr), len(pixArr[0]))
+print("pixArr dimension:", len(pixArr), len(pixArr[0]))
 printOutputImgArr(pixArr, f)
 f.close()
