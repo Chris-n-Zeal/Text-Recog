@@ -36,7 +36,7 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 		# print("imgArr demension: ", len(imgArr), "x", len(imgArr[0]))
 		#calculate the ratio the img needs to be compressed at
 		compressRatio = int(round(max(imgWidth/MAX_WIDTH_OUTPUT, imgHeight/MAX_HEIGHT_OUTPUT)))
-		print("compressRatio: ", compressRatio)
+		# print("compressRatio: ", compressRatio)
 		#compress imgArr and put in to compressedImgArr for later process
 		topLeftPixelRow = 0 #start from the first row
 		btnRightPixelRow = topLeftPixelRow + compressRatio - 1
@@ -79,6 +79,7 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 					currentCol += 1
 				currentCol = topLeftPixelCol
 				currentRow += 1
+			# print("tmpList: ", tmp)
 			if (imgWidth/compressRatio) != int(imgWidth/compressRatio):
 				#compress the last grouped pixels into one pixel
 				compressedImgArr.append(averageRGB(tmp))
@@ -93,7 +94,8 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 
 		#tranform img to ASCII map
 		pixelCounter = 0
-		newImgWidth = (int(imgWidth/compressRatio) + imgWidth - (int(imgWidth/compressRatio)*compressRatio))
+		newImgWidth = (int(imgWidth/compressRatio))
+		tmp = []
 		for pixel in compressedImgArr:
 			r,g,b = pixel
 			pixelVal = r + g + b
@@ -130,7 +132,6 @@ def printOutputImgArr(imgArr, outputFile): #write the 2D array to outputFile
 		for j in range(len(pixArr[i])):
 			outputFile.write(pixArr[i][j])
 		outputFile.write("\n")
-		outputFile.flush()
 	outputFile.write("/")
 
 def shrinkImgArr(imgArr): #not used
@@ -168,7 +169,7 @@ def sumRGB(pixelList): #return a RGB tuple that contains the sum of all the RGB 
 #main
 #work best with square images. As the retangle ratio gets bigger, the output will look more distorted
 f = open('asciiArt.txt', 'w')
-img = Image.open("crunch.jpg")
+img = Image.open("bigLogo.jpg")
 pixArr = imgToArr(img)
 print("pixArr dimension:", len(pixArr), len(pixArr[0]))
 printOutputImgArr(pixArr, f)
