@@ -4,7 +4,7 @@
 #
 # Authors: Chris Horan, Zeal Yim
 # Created: Feb 23 2016
-# Last modified: Feb 24 2016 by Zeal
+# Last modified: Feb 28 2016 by Zeal
 ####
 
 from __future__ import print_function
@@ -15,28 +15,71 @@ WHITE = 765 #RGB
 MAX_HEIGHT_OUTPUT = 300
 MAX_WIDTH_OUTPUT = 300
 
-def imgToArr(img): #turn an image into a 2D array. If the image's size is larger than MAX_HEIGHT_OUTPUT or MAX_WIDTH_OUTPUT, the image will be shrinked proportionally
+#Takes the sum of RGB values and returns a corresponding character
+def colourToChar(rgbSum, min=1):
+	cRange = WHITE - min
+	if rgbSum > min + cRange * 0.9:
+		return "  "
+	elif rgbSum <= min + cRange * 0.9 and rgbSum > min + cRange * 0.8:
+		return "` "
+	elif rgbSum <= min + cRange * 0.8 and rgbSum > min + cRange * 0.7:
+		return "j "
+	elif rgbSum <= min + cRange * 0.7 and rgbSum > min + cRange * 0.6:
+		return "i "
+	elif rgbSum <= min + cRange * 0.6 and rgbSum > min + cRange * 0.5:
+		return "+ "
+	elif rgbSum <= min + cRange * 0.5 and rgbSum > min + cRange * 0.4:
+		return "< "
+	elif rgbSum <= min + cRange * 0.4 and rgbSum > min + cRange * 0.3:
+		return "$ "
+	elif rgbSum <= min + cRange * 0.3 and rgbSum > min + cRange * 0.2:
+		return "@ "
+	elif rgbSum <= min + cRange * 0.2 and rgbSum > min + cRange * 0.1:
+		return "& "
+	else:
+		return "% "
+#Takes an image and returns the sum of the RGB values of the darkest pixel
+def getDarkest(pic):
+	darkest = 765
+	for pixel in iter(pic.getdata()):
+		r,g,b = pixel
+		pixelVal = r + g + b
+		if pixelVal < darkest:
+			darkest = pixelVal
+	return darkest
+
+#Takes an image and return a 2D array with the image pixel's RGB
+def imgToArr(img, imgWidth):
+	rgbMapArray = []
+	tmp = []
+	pixelCounter = 0
+
+	#convert img's pixel into a 2D array
+	for pixel in iter(img.getdata()):
+		tmp.append(pixel)
+		pixelCounter += 1
+		if pixelCounter >= imgWidth:
+			rgbMapArray.append(tmp)
+			tmp = [] #need to look at how python handles reassignment regarding memory management
+			pixelCounter = 0
+
+	return rgbMapArray
+
+def imgToText(img): #turn an image into a 2D array. If the image's size is larger than MAX_HEIGHT_OUTPUT or MAX_WIDTH_OUTPUT, the image will be shrinked proportionally
 	nearWhite = WHITE * THRESHOLD_MARGIN
 	pixelsArr = []
 	imgWidth, imgHeight = img.size
+	newImgWidth = 0
+	imgArr = imgToArr(img, imgWidth)
 
 	if imgWidth > MAX_WIDTH_OUTPUT or imgHeight > MAX_HEIGHT_OUTPUT: #check if img needs to be compressed
-		imgArr = [] #store the pixel of img
 		compressedImgArr = [] #store the pixel of img after compression
 		tmp = [] # temp array to store pixel temporary
-		pixelCounter = 0
-		#convert img's pixel into a 2D array
-		for pixel in iter(img.getdata()):
-			tmp.append(pixel)
-			pixelCounter += 1
-			if pixelCounter >= imgWidth:
-				imgArr.append(tmp)
-				tmp = [] #need to look at how python handles reassignment regarding memory management
-				pixelCounter = 0
 		# print("imgArr demension: ", len(imgArr), "x", len(imgArr[0]))
 		#calculate the ratio the img needs to be compressed at
 		compressRatio = int(round(max(imgWidth/MAX_WIDTH_OUTPUT, imgHeight/MAX_HEIGHT_OUTPUT)))
 		# print("compressRatio: ", compressRatio)
+
 		#compress imgArr and put in to compressedImgArr for later process
 		topLeftPixelRow = 0 #start from the first row
 		btnRightPixelRow = topLeftPixelRow + compressRatio - 1
@@ -91,48 +134,34 @@ def imgToArr(img): #turn an image into a 2D array. If the image's size is larger
 			#print("LeftOver Compressed!!!!!!!!!!!!")
 			# print("tmpList: ", tmp)
 		#print("nextBtnRightPixelRow: ", nextBtnRightPixelRow, "nextBtnRightPixelCol: ", nextBtnRightPixelCol)
-
-		#tranform img to ASCII map
-		pixelCounter = 0
 		newImgWidth = (int(imgWidth/compressRatio))
-		tmp = []
-		for pixel in compressedImgArr:
-			r,g,b = pixel
-			pixelVal = r + g + b
-			if pixelVal < nearWhite:
-				tmp.append("M ")
-			else:
-				tmp.append("  ")
-			pixelCounter += 1
-			if pixelCounter == newImgWidth:
-				pixelsArr.append(tmp)
-				tmp = []
-				pixelCounter = 0
-		print("newImgWidth: ", newImgWidth)
-
 	else: #img does not need to be compressed
-		tmp = []
-		pixelCounter = 0
-		for pixel in iter(img.getdata()):
-			r,g,b = pixel
-			pixelVal = r + g + b
-			if pixelVal < nearWhite:
-				tmp.append("M ")
-			else:
-				tmp.append("  ")
-			pixelCounter += 1
-			if pixelCounter == imgWidth:
-				pixelsArr.append(tmp)
-				tmp = []
-				pixelCounter = 0
+		newImgWidth = imgWidth
+
+	print("newImgWidth: ", newImgWidth)
+	#tranform img to ASCII map
+	darkestPixel = getDarkest(img)
+	pixelCounter = 0
+	tmp = []
+	for pixel in compressedImgArr:
+		r,g,b = pixel
+		pixelVal = r + g + b
+		tmp.append(colourToChar(pixelVal, darkestPixel))
+		pixelCounter += 1
+		if pixelCounter == newImgWidth:
+			pixelsArr.append(tmp)
+			tmp = []
+			pixelCounter = 0
+
 	return pixelsArr
 
 def printOutputImgArr(imgArr, outputFile): #write the 2D array to outputFile
-	for i in range(len(pixArr)):
-		for j in range(len(pixArr[i])):
-			outputFile.write(pixArr[i][j])
-		outputFile.write("\n")
-	outputFile.write("/")
+	if len(imgArr) != 0:
+		for i in range(len(pixArr)):
+			for j in range(len(pixArr[i])):
+				outputFile.write(pixArr[i][j])
+			outputFile.write("\n")
+		outputFile.write("/")
 
 def shrinkImgArr(imgArr): #not used
 	newArr = []
@@ -169,8 +198,9 @@ def sumRGB(pixelList): #return a RGB tuple that contains the sum of all the RGB 
 #main
 #work best with square images. As the retangle ratio gets bigger, the output will look more distorted
 f = open('asciiArt.txt', 'w')
-img = Image.open("bigLogo.jpg")
-pixArr = imgToArr(img)
-print("pixArr dimension:", len(pixArr), len(pixArr[0]))
+img = Image.open("caltex.jpg")
+pixArr = imgToText(img)
+print("New Image dimension:", len(pixArr), len(pixArr[0]))
 printOutputImgArr(pixArr, f)
 f.close()
+print("Done!")
