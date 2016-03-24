@@ -4,11 +4,18 @@
 #
 # Authors: Chris Horan, Zeal Yim
 # Created: Feb 23 2016
-# Last modified: Mar 1 2016 by Chris
+# Last modified: Mar 22 2016 by Chris
 ####
 
 from __future__ import print_function
 from PIL import Image
+from Tkinter import Tk
+from tkFileDialog import askopenfilename
+import os
+from subprocess import call
+from sys import platform
+from time import sleep
+import _winreg
 
 THRESHOLD_MARGIN = 0.95 #Filters out near-white pixels
 WHITE = 765 #RGB
@@ -21,23 +28,23 @@ def colourToChar(rgbSum, min=1):
 	if rgbSum > min + cRange * 0.9:
 		return "  "
 	elif rgbSum <= min + cRange * 0.9 and rgbSum > min + cRange * 0.8:
-		return "` "
+		return ". "
 	elif rgbSum <= min + cRange * 0.8 and rgbSum > min + cRange * 0.7:
-		return "j "
+		return "` "
 	elif rgbSum <= min + cRange * 0.7 and rgbSum > min + cRange * 0.6:
-		return "i "
+		return "; "
 	elif rgbSum <= min + cRange * 0.6 and rgbSum > min + cRange * 0.5:
-		return "+ "
+		return "/ "
 	elif rgbSum <= min + cRange * 0.5 and rgbSum > min + cRange * 0.4:
-		return "< "
+		return "j "
 	elif rgbSum <= min + cRange * 0.4 and rgbSum > min + cRange * 0.3:
-		return "$ "
-	elif rgbSum <= min + cRange * 0.3 and rgbSum > min + cRange * 0.2:
 		return "@ "
-	elif rgbSum <= min + cRange * 0.2 and rgbSum > min + cRange * 0.1:
-		return "& "
-	else:
+	elif rgbSum <= min + cRange * 0.3 and rgbSum > min + cRange * 0.2:
 		return "% "
+	elif rgbSum <= min + cRange * 0.2 and rgbSum > min + cRange * 0.1:
+		return "y "
+	else:
+		return "$ "
 
 # Takes an image and returns the sum of the RGB values of the darkest pixel
 def getDarkest(pic):
@@ -81,10 +88,7 @@ def compressImg(imgArr, compressRatio):
 	compressedImgArr = [] #store the pixel of img after compression
 	tmp = [] # temp array to store pixel temporary
 	imgWidth, imgHeight = img.size
-	# print("imgArr demension: ", len(imgArr), "x", len(imgArr[0]))
 	#calculate the ratio the img needs to be compressed at
-
-	# print("compressRatio: ", compressRatio)
 
 	#compress imgArr and put in to compressedImgArr for later process
 	topLeftPixelRow = 0 #start from the first row
@@ -174,11 +178,8 @@ def imgToText(img):
 		newImgWidth = imgWidth
 		compressedImgArr = imgToArr(img, imgWidth)
 
-	print("newImgWidth: ", newImgWidth)
 	#tranform img to ASCII map
 	pixelsArr = imgToASCII(compressedImgArr, newImgWidth, getDarkest(img))
-
-
 	return pixelsArr
 
 # Saves the ASCII character array to a text file
@@ -212,12 +213,27 @@ def sumRGB(pixelList):
 	sumPixel = sumRed, sumGreen, sumBlue
 	return sumPixel
 
+# Opens a dialog box that allows the user to select an image file
+def getFileName():
+	Tk().withdraw()
+	filename = askopenfilename()
+	return filename
+
+# Opens the AsciiArt.txt file for preview
+def openFile(filepath):
+	os.startfile(filepath)
+
 # Main
 # Works best with square images. As the ratio between the sides gets bigger, the output image will be more distorted
 f = open('asciiArt.txt', 'w')
-img = Image.open("bcLogo.jpg")
+fileName = getFileName()
+img = Image.open(fileName)
 pixArr = imgToText(img)
-print("New Image dimension:", len(pixArr), len(pixArr[0]))
 writeImgArr(pixArr, f)
+openFile('asciiArt.txt')
 f.close()
-print("Done!")
+
+# Deletes the file after
+while(os.path.isfile('asciiArt.txt')):
+	sleep(0.5)
+	os.remove('asciiArt.txt')
